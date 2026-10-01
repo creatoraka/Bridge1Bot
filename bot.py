@@ -66,7 +66,6 @@ async def send_to_discord(full_text: str):
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post(webhook_url, json=payload) as response:
-                # Исправлена ошибка синтаксиса: проверяем успешные коды (200-299)
                 if 200 <= response.status < 300:
                     logging.info("Сообщение успешно доставлено в Discord.")
                 else:
@@ -77,7 +76,6 @@ async def send_to_discord(full_text: str):
 @dp.message(Command("webhook"))
 async def cmd_set_webhook(message: types.Message):
     """Обработчик команды /webhook <ссылка>"""
-    # Выделяем текст после команды
     args = message.text.split(maxsplit=1)
     
     if len(args) < 2:
@@ -90,7 +88,6 @@ async def cmd_set_webhook(message: types.Message):
         await message.reply("❌ Это не похоже на правильную ссылку на вебхук Discord.")
         return
 
-    # Сохраняем вебхук в базу данных
     save_webhook_url(new_url)
     await message.reply("✅ Ссылка на Discord Webhook успешно обновлена!")
 
@@ -104,13 +101,22 @@ async def handle_tg_message(message: types.Message):
     if message.chat.type not in ["group", "supergroup"] or message.from_user.is_bot:
         return
 
-    user_name = message.from_user.full_name
+    # Очищаем имя пользователя от лишних пробелов по краям
+    user_name = message.from_user.full_name.strip()
+    
+    # Получаем текст сообщения или подпись к файлу
     text_content = message.text or message.caption
     
     if not text_content:
         return
 
+    # Очищаем текст сообщения от лишних пробелов по краям
+    text_content = text_content.strip()
+
+    # Формируем строгое отображение без лишних знаков и пробелов
     formatted_message = f"{user_name}: {text_content}"
+
+    # Отправляем в Discord
     await send_to_discord(formatted_message)
 
 async def main():
